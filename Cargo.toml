@@ -14,13 +14,15 @@ codegen-units = 1
 # opt-level = 'z' # wasm less size.
 
 
-[dependencies]
-fastrand = "2.3.0"
 
 [dev-dependencies.bevy]
 version = "0.18.1"
 default-features = false
 features = ["3d", "free_camera", "dynamic_linking"]
+
+[dependencies]
+fastrand = "2.3.0"
+
 
 [dependencies.bevy]
 version = "0.18.*"

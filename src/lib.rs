@@ -41,7 +41,7 @@ impl <'a>RandomPath<'a> {
     // ---
 
     #[allow(dead_code)]
-    pub fn generate(&self) -> Vec<Vec3> {
+    pub fn generate_convex_hull(&self) -> Vec<Vec3> {
         let path = match self.predefined {
             Some(path)=> path.clone(),
             _ => (0 .. self.count)
@@ -55,21 +55,18 @@ impl <'a>RandomPath<'a> {
 
         };
 
-        let far_point = - self.map_dim * 1.5;
 
-        let p0 = path.iter().min_by(|a, b |  {
-            far_point.distance_squared(**a).total_cmp(&(far_point.distance_squared(**b)))
-        })
-        .cloned().unwrap()
-        ;
+        let min_z = path.iter().min_by( | a, b |  a.z.total_cmp(&b.z)).unwrap();
+        let min_x = path.iter().filter( | e |  e.z == min_z.z).min_by( | a, b | a.x.total_cmp(&b.x)).unwrap();
+        let p0 = path.iter().filter( | e |  e.z == min_z.z && e.x == min_x.x).min_by( | a, b | a.y.total_cmp(&b.y)).unwrap();
 
         let mut dedup:HashMap<i32, Vec3> = HashMap::new();
 
         path.iter()
-            .filter(| p | **p != p0)
+            .filter(| p | **p != *p0)
             .map( | p |  {
                 let d = (p - p0).normalize().dot(Vec3::X);
-                ((d * 1000.) as i32, p)
+                ((d  / self.accuracy) as i32, p)
             })
             .for_each(| p | {
                 dedup.entry(p.0).and_modify(| e |  {
@@ -88,7 +85,7 @@ impl <'a>RandomPath<'a> {
         let p1 = dedup[keys.pop().unwrap()];
 
         // println!("{:?}", keys);
-        let mut convex_hull = vec![p0, p1];
+        let mut convex_hull = vec![*p0, p1];
 
         for key in keys.iter().rev() {
             while convex_hull.len() > 1 && ccw(convex_hull[convex_hull.len() - 2], convex_hull[convex_hull.len() - 1], dedup[key]) {
@@ -96,25 +93,26 @@ impl <'a>RandomPath<'a> {
             }
             convex_hull.push(dedup[key]);
         }
-        convex_hull.push(p0);
-        modify_convex_hull(&convex_hull)
+        convex_hull.push(*p0);
+        convex_hull
+        // modify_convex_hull(&convex_hull)
     }
 
-}
+    // ---
 
-// ---
-
-fn modify_convex_hull(convex_hull: &Vec<Vec3>) -> Vec<Vec3> {
-    let mut convex_hull2: Vec<Vec3> = vec![convex_hull[0]];
-    for i in 1 .. convex_hull.len() {
-        let half = (convex_hull[i] +  convex_hull[i - 1]) * 0.5;
-        let half_vec = half - convex_hull[i - 1];
-        // let sign = (fastrand::f32() - 0.5).signum();
-        let half_cross = half -  half_vec.normalize().cross(Vec3::Y)  * half_vec.length() * 0.3;
-        convex_hull2.push(half_cross);
-        convex_hull2.push(convex_hull[i]);
+    pub fn vary_convex_hull(convex_hull: &Vec<Vec3>) -> Vec<Vec3> {
+        let mut convex_hull2: Vec<Vec3> = vec![convex_hull[0]];
+        for i in 1 .. convex_hull.len() {
+            let half = (convex_hull[i] +  convex_hull[i - 1]) * 0.5;
+            let half_vec = half - convex_hull[i - 1];
+            let sign = (fastrand::f32() - 0.5).signum();
+            let half_cross = half -  sign * half_vec.normalize().cross(Vec3::Y)  * half_vec.length() * 0.3;
+            convex_hull2.push(half_cross);
+            convex_hull2.push(convex_hull[i]);
+        }
+        convex_hull2
     }
-    convex_hull2
+
 }
 
 // ---
