@@ -13,8 +13,11 @@
               FreeCameraPlugin,
           ))
           .add_systems(Startup, startup)
+
           .run();
   }
+
+
 
   // ---
 
@@ -37,21 +40,21 @@
           .map(| x | vec3(x.0, 0., x.1) * 10.)
           .collect::<Vec<_>>();
 
-      let point_m = meshes.add(Sphere::new(0.5));
-      for p in &predefined {
-          cmd.spawn((
-              Transform::from_translation(*p),
-              Mesh3d(point_m.clone()),
-              MeshMaterial3d(materials.add(StandardMaterial{
-                  emissive: LinearRgba::new(10., 0., 10., 0.1),
-                  alpha_mode: AlphaMode::Blend,
-                  ..default()
-              }))
-          ));
-      }
-
+      // let point_m = meshes.add(Sphere::new(0.5));
+      // for p in &predefined {
+      //     cmd.spawn((
+      //         Transform::from_translation(*p),
+      //         Mesh3d(point_m.clone()),
+      //         MeshMaterial3d(materials.add(StandardMaterial{
+      //             emissive: LinearRgba::new(10., 0., 10., 0.1),
+      //             alpha_mode: AlphaMode::Blend,
+      //             ..default()
+      //         }))
+      //     ));
+      // }
+      let mut rpath = RandomPath::from_predefined(&predefined).generate_convex_hull();
       // let rpath = RandomPath::new(12, vec3(10., 0., 10.)).generate_convex_hull();
-      let rpath = RandomPath::from_predefined(&predefined).generate_convex_hull();
+
       cmd.spawn((
           Mesh3d(meshes.add(Polyline3d::new(rpath.clone()))),
           MeshMaterial3d(materials.add(StandardMaterial{
@@ -60,9 +63,8 @@
           }))
       ));
 
-
-
-      let rpath = RandomPath::vary_convex_hull(&rpath);
+      RandomPath::vary(&mut rpath);
+      // RandomPath::smooth_out(&mut rpath, 110f32.to_radians(), 2.);
       cmd.spawn((
           Mesh3d(meshes.add(Polyline3d::new(rpath.clone()))),
           MeshMaterial3d(materials.add(StandardMaterial{
@@ -71,16 +73,15 @@
           }))
       ));
 
-
-      let cr = CubicCardinalSpline::new(0.8, rpath).to_curve().unwrap();
-      let spline = cr.iter_positions(120).collect::<Vec<_>>();
-      cmd.spawn((
-          Mesh3d(meshes.add(Polyline3d::new(spline))),
-          MeshMaterial3d(materials.add(StandardMaterial{
-              emissive: LinearRgba::rgb(0., 10., 0.),
-              ..default()
-          }))
-      ));
+      // let cr = CubicCardinalSpline::new(0.3, rpath).to_curve_cyclic().unwrap();
+      // let spline = cr.iter_positions(120).collect::<Vec<_>>();
+      // cmd.spawn((
+      //     Mesh3d(meshes.add(Polyline3d::new(spline))),
+      //     MeshMaterial3d(materials.add(StandardMaterial{
+      //         emissive: LinearRgba::rgb(0., 10., 0.),
+      //         ..default()
+      //     }))
+      // ));
 
 
   }

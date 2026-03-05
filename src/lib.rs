@@ -59,7 +59,7 @@ impl <'a>RandomPath<'a> {
         let min_z = path.iter().min_by( | a, b |  a.z.total_cmp(&b.z)).unwrap();
         let min_x = path.iter().filter( | e |  e.z == min_z.z).min_by( | a, b | a.x.total_cmp(&b.x)).unwrap();
         let p0 = path.iter().filter( | e |  e.z == min_z.z && e.x == min_x.x).min_by( | a, b | a.y.total_cmp(&b.y)).unwrap();
-        println!("{:?}", p0);
+        // println!("{:?}", p0);
         let mut dedup:HashMap<i32, Vec3> = HashMap::new();
 
         path.iter()
@@ -93,27 +93,89 @@ impl <'a>RandomPath<'a> {
             }
             convex_hull.push(dedup[key]);
         }
-        convex_hull.push(*p0);
+
+        let closing_point = *p0 - (*p0 - convex_hull[convex_hull.len() - 1]) * 0.25;
+        convex_hull.push(closing_point);
         convex_hull
-        // modify_convex_hull(&convex_hull)
     }
 
     // ---
 
-    pub fn vary_convex_hull(convex_hull: &Vec<Vec3>) -> Vec<Vec3> {
-        let mut convex_hull2: Vec<Vec3> = vec![convex_hull[0]];
-        for i in 1 .. convex_hull.len() {
-            let half = (convex_hull[i] +  convex_hull[i - 1]) * 0.5;
-            let half_vec = half - convex_hull[i - 1];
+    // pub fn vary(convex_hull: &Vec<Vec3>) -> Vec<Vec3> {
+    //     let mut convex_hull2: Vec<Vec3> = vec![convex_hull[0]];
+    //     for i in 1 .. convex_hull.len() {
+    //         let tang = (convex_hull[i] - convex_hull[i - 1]).normalize();
+    //         let half = (convex_hull[i] + convex_hull[i - 1]) * 0.5;
+    //         let div = tang.cross(Vec3::Y).normalize();
+    //         // let sign = (fastrand::f32() - 0.5).signum();
+    //         let sign = if i % 2 == 0 { 1. } else { -1. };
+    //         let half_cross = half - sign * div *  fastrand::f32() * 20. ;
+    //         convex_hull2.push(half_cross);
+    //         convex_hull2.push(convex_hull[i]);
+    //     }
+
+    //     convex_hull2
+    // }
+
+    pub fn vary(path: &mut Vec<Vec3>) {
+        let mut i = 1;
+        while let Some(current) = path.get(i) {
+            let tang = (current - path[i - 1]).normalize();
+            let half = (current + path[i - 1]) * 0.5;
+            let div = tang.cross(Vec3::Y).normalize();
             // let sign = (fastrand::f32() - 0.5).signum();
-            let sign = if i % 2 == 0 { -1. } else { 1. };
-            let half_cross = half -  sign * half_vec.normalize().cross(Vec3::Y)  * half_vec.length() * 0.3;
-            convex_hull2.push(half_cross);
-            convex_hull2.push(convex_hull[i]);
+            let sign = if i % 4 == 0 { 1. } else { -1. };
+            // let half_cross = half - sign * div *  fastrand::f32() * 20. ;
+            let half_cross = half - sign * div * 2.  ;
+            path.insert(i, half_cross);
+            i += 2;
         }
-        convex_hull2
+
+
+        // for i in 1 .. convex_hull.len() {
+        //     let tang = (convex_hull[i] - convex_hull[i - 1]).normalize();
+        //     let half = (convex_hull[i] + convex_hull[i - 1]) * 0.5;
+        //     let div = tang.cross(Vec3::Y).normalize();
+        //     // let sign = (fastrand::f32() - 0.5).signum();
+        //     let sign = if i % 2 == 0 { 1. } else { -1. };
+        //     let half_cross = half - sign * div *  fastrand::f32() * 20. ;
+        //     convex_hull2.push(half_cross);
+        //     convex_hull2.push(convex_hull[i]);
+        // }
+
+        // convex_hull2
     }
 
+
+
+    // ---
+
+    pub fn smooth_out(path: &mut Vec<Vec3>, min_angle: f32, min_segment_length: f32) {
+        let max_dot = min_angle.cos();
+        // println!("{} {}", min_angle, max_dot);
+        for _j in 0 .. 1000 {
+            let mut updated = false;
+            for i in 1 .. path.len() - 1 {
+                let vec1 = (path[i - 1] - path[i]).normalize();
+                let vec2 = (path[i + 1] - path[i]).normalize();
+                if vec1.dot(vec2) > max_dot {
+                    updated = true;
+                    path[i] += (vec1 + vec2).normalize() * 0.5
+                }
+            }
+            if !updated {
+                break;
+            }
+        }
+        for _l in 0 .. path.len() {
+            for i in 1 .. path.len() {
+                if (path[i] - path[i -1 ]).length() < min_segment_length  {
+                    path.remove(i);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 // ---
