@@ -59,7 +59,7 @@ impl <'a>RandomPath<'a> {
         let min_z = path.iter().min_by( | a, b |  a.z.total_cmp(&b.z)).unwrap();
         let min_x = path.iter().filter( | e |  e.z == min_z.z).min_by( | a, b | a.x.total_cmp(&b.x)).unwrap();
         let p0 = path.iter().filter( | e |  e.z == min_z.z && e.x == min_x.x).min_by( | a, b | a.y.total_cmp(&b.y)).unwrap();
-
+        println!("{:?}", p0);
         let mut dedup:HashMap<i32, Vec3> = HashMap::new();
 
         path.iter()
@@ -105,7 +105,8 @@ impl <'a>RandomPath<'a> {
         for i in 1 .. convex_hull.len() {
             let half = (convex_hull[i] +  convex_hull[i - 1]) * 0.5;
             let half_vec = half - convex_hull[i - 1];
-            let sign = (fastrand::f32() - 0.5).signum();
+            // let sign = (fastrand::f32() - 0.5).signum();
+            let sign = if i % 2 == 0 { -1. } else { 1. };
             let half_cross = half -  sign * half_vec.normalize().cross(Vec3::Y)  * half_vec.length() * 0.3;
             convex_hull2.push(half_cross);
             convex_hull2.push(convex_hull[i]);
