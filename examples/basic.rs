@@ -63,8 +63,8 @@
           }))
       ));
 
-      RandomPath::vary(&mut rpath);
-      // RandomPath::smooth_out(&mut rpath, 110f32.to_radians(), 2.);
+      RandomPath::vary(&mut rpath, 2.);
+      RandomPath::smooth_out(&mut rpath, 110f32.to_radians(), 2.);
       cmd.spawn((
           Mesh3d(meshes.add(Polyline3d::new(rpath.clone()))),
           MeshMaterial3d(materials.add(StandardMaterial{
@@ -73,15 +73,15 @@
           }))
       ));
 
-      // let cr = CubicCardinalSpline::new(0.3, rpath).to_curve_cyclic().unwrap();
-      // let spline = cr.iter_positions(120).collect::<Vec<_>>();
-      // cmd.spawn((
-      //     Mesh3d(meshes.add(Polyline3d::new(spline))),
-      //     MeshMaterial3d(materials.add(StandardMaterial{
-      //         emissive: LinearRgba::rgb(0., 10., 0.),
-      //         ..default()
-      //     }))
-      // ));
+      let cr = CubicCardinalSpline::new(0.3, rpath).to_curve_cyclic().unwrap();
+      let spline = cr.iter_positions(120).collect::<Vec<_>>();
+      cmd.spawn((
+          Mesh3d(meshes.add(Polyline3d::new(spline))),
+          MeshMaterial3d(materials.add(StandardMaterial{
+              emissive: LinearRgba::rgb(0., 10., 0.),
+              ..default()
+          }))
+      ));
 
 
   }
