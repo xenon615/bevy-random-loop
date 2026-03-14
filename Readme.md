@@ -1,7 +1,7 @@
 # Generate Random Loop  
 Let's say we need a race track, and we need to get a random set  of points that describe it.
 
-Please refer to example "basic"
+Please refer to example "basic"  
 
 ```rust
 
