@@ -41,7 +41,7 @@ impl <'a>RandomPath<'a> {
     // ---
 
     #[allow(dead_code)]
-    pub fn generate_convex_hull(&self) -> Vec<Vec3> {
+    pub fn generate(&self) -> Vec<Vec3> {
         let path = match self.predefined {
             Some(path)=> path.clone(),
             _ => (0 .. self.count)
@@ -52,14 +52,13 @@ impl <'a>RandomPath<'a> {
                     )
                 )
                 .collect::<Vec<_>>()
-
         };
 
 
         let min_z = path.iter().min_by( | a, b |  a.z.total_cmp(&b.z)).unwrap();
         let min_x = path.iter().filter( | e |  e.z == min_z.z).min_by( | a, b | a.x.total_cmp(&b.x)).unwrap();
         let p0 = path.iter().filter( | e |  e.z == min_z.z && e.x == min_x.x).min_by( | a, b | a.y.total_cmp(&b.y)).unwrap();
-        // println!("{:?}", p0);
+
         let mut dedup:HashMap<i32, Vec3> = HashMap::new();
 
         path.iter()
@@ -78,13 +77,10 @@ impl <'a>RandomPath<'a> {
                 ;
             });
 
-        // println!("{:?}", dedup);
-
         let mut keys:Vec<_> = dedup.keys().collect();
         keys.sort();
         let p1 = dedup[keys.pop().unwrap()];
 
-        // println!("{:?}", keys);
         let mut convex_hull = vec![*p0, p1];
 
         for key in keys.iter().rev() {
@@ -101,49 +97,29 @@ impl <'a>RandomPath<'a> {
 
     // ---
 
-    pub fn vary(path: &mut Vec<Vec3>, min_segment_length: f32) {
+    pub fn vary(path: &mut Vec<Vec3>, variation: f32) {
         let mut i = 1;
         let mut odd_even = 0 ;
         while let Some(current) = path.get(i) {
-            println!("{:?}", i);
-            let segment = current - path[i - 1];
-            if segment.length() <= min_segment_length {
-                continue;
+            let prev = path[i - 1];
+            let segment = current - prev;
+            let segment_vec = segment.normalize();
+            let bn = segment_vec.cross(Vec3::Y).normalize();
+            let insert_count = (segment.length() / variation).floor() as usize;
+            for j in 0 .. insert_count {
+                odd_even += 1;
+                let sign = if odd_even % 2 == 0 { 1. } else { -1. };
+                let new_point = prev + variation * (segment_vec * j as f32 + sign * bn);
+                path.insert(i, new_point);
+                i += 1;
             }
-            let half = (current + path[i - 1]) * 0.5;
-            let div = segment.normalize().cross(Vec3::Y).normalize();
-            // let sign = (fastrand::f32() - 0.5).signum();
-            let sign = if odd_even % 2 == 0 { 1. } else { -1. };
-            // let half_cross = half - sign * div *  fastrand::f32() * segment.length() * 0.5 ;
-            let half_cross = half - sign * div *  segment.length() * 0.5 ;
-            // let half_cross = half - sign * div * 2.  ;
-            path.insert(i, half_cross);
-            i += 2;
-            odd_even += 1 ;
+            i += 1;
         }
     }
-
-
 
     // ---
 
     pub fn smooth_out(path: &mut Vec<Vec3>, min_angle: f32, min_segment_length: f32) {
-        let max_dot = min_angle.cos();
-        // println!("{} {}", min_angle, max_dot);
-        for _j in 0 .. 1000 {
-            let mut updated = false;
-            for i in 1 .. path.len() - 1 {
-                let vec1 = (path[i - 1] - path[i]).normalize();
-                let vec2 = (path[i + 1] - path[i]).normalize();
-                if vec1.dot(vec2) > max_dot {
-                    updated = true;
-                    path[i] += (vec1 + vec2).normalize() * 0.5
-                }
-            }
-            if !updated {
-                break;
-            }
-        }
         for _l in 0 .. path.len() {
             for i in 1 .. path.len() {
                 if (path[i] - path[i -1 ]).length() < min_segment_length  {
@@ -151,6 +127,38 @@ impl <'a>RandomPath<'a> {
                     break;
                 }
             }
+        }
+
+        let max_dot = min_angle.cos();
+        let smooth_steps = 10;
+        for _j in 0 .. smooth_steps {
+            let mut angle_ok = true;
+            for i in 1 .. path.len() - 1 {
+                let vec1 = path[i - 1] - path[i];
+                let vec2 = path[i + 1] - path[i];
+                if vec1.normalize().dot(vec2.normalize()) > max_dot {
+                    angle_ok = false;
+                    path[i] += (vec1 + vec2) / smooth_steps as f32;
+                }
+            }
+            if angle_ok {
+                break;
+            }
+        }
+
+
+        let last =  path.len() - 1;
+        for _k in 0 .. smooth_steps {
+            let vec1 = path[last - 1 ] - path[last];
+            let vec2 = path[1] - path[0];
+
+            if vec1.normalize().dot(vec2.normalize()) < max_dot {
+                break;
+            }
+
+            let bisec_step = (vec1 + vec2) / smooth_steps as f32;
+            path[0] += bisec_step;
+            path[last] += bisec_step;
         }
     }
 }
