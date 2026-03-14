@@ -4,9 +4,7 @@ Let's say we need a race track, and we need to get a random set  of points that 
 Please refer to example "basic"  
 
 ```rust
-
     let mut rpath = RandomLoop::generate(12, vec3(100., 0., 100.));
-    
 ```
 ![image1](img/img1.png)
 
