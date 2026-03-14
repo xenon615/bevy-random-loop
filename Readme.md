@@ -3,14 +3,16 @@ Let's say we need a race track, and we need to get a random set  of points that 
 
 Please refer to example "basic"  
 
+Lets create convex hull around random points  
+
 ```rust
     let mut rpath = RandomLoop::generate(12, vec3(100., 0., 100.));
 ```
 ![image1](img/img1.png)
+Add extra points
 
 ```rust
     RandomLoop::vary(&mut rpath, 50.);
-    
 ```
 
 ![image2](img/img2.png)
