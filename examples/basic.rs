@@ -49,7 +49,7 @@ fn startup(
 
     // Let's fluff this up a bit
 
-    RandomLoop::vary(&mut rpath, 30.);
+    RandomLoop::vary(&mut rpath, 35.);
     cmd.spawn((
         Mesh3d(meshes.add(Polyline3d::new(rpath.clone()))),
         MeshMaterial3d(materials.add(StandardMaterial{
@@ -60,7 +60,7 @@ fn startup(
 
     //And smooth out too sharp corners and too short segments
 
-    RandomLoop::smooth_out(&mut rpath, 120f32.to_radians(), 30.);
+    RandomLoop::smooth_out(&mut rpath, 120f32.to_radians(), 35.);
     cmd.spawn((
         Mesh3d(meshes.add(Polyline3d::new(rpath.clone()))),
         MeshMaterial3d(materials.add(StandardMaterial{
